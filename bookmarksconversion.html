@@ -1,0 +1,141 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<title>JSON to Netscape HTML - Bookmarks conversion</title>
+	<meta charset="utf-8" />
+	<meta name="description" content="This script is licensed under the Beerware License, revision 42 ;)" />
+	<meta name="author" content="Guillaume Litaudon" />
+	<meta name="copyright" content="Beerware License, revision 42" />
+	<style type="text/css">
+		h1, h2, p, form {
+			text-align: center;
+		}
+		textarea {
+			width:50%;
+		}
+	</style>
+</head>
+<body>
+
+	<h1>JSON to Netscape HTML</h1>
+	<h2>Bookmarks conversion</h2>
+	<p>This script is licensed under the <a href="https://en.wikipedia.org/wiki/Beerware" title="Beerware License - Wikipedia">Beerware License, revision 42</a> ;)</p>
+	<form action="" id="json-form" method="post" onsubmit="return parseResult()">
+		<textarea name="json-input" id="json-input" cols="30" rows="10" placeholder="Paste the JSON file here…"></textarea><br />
+		<input type="submit" id="submit" value="Convert" />
+	</form>
+
+	<!-- Fallback for older browsers -->
+	<script>
+		window.JSON || document.write('<script src="//cdn.jsdelivr.net/json3/latest/json3.min.js"><\/scr'+'ipt>');
+	</script>
+	<script type="text/javascript">
+			function parseObject(obj, result) {
+				result += "\n";
+
+				if(obj.constructor == Object) { 
+					// Folders
+					if(obj.hasOwnProperty("children")) {
+						result += "<DT><H3 ";
+						var tmp = new Object();
+
+						for(var p in obj) {
+							if(p === "name" || p === "title") {
+								tmp["value"] = obj[p];
+							} else if(p === "dateAdded" || p === "date_added") {
+								tmp["date"] = obj[p];
+							} else if(p === "lastModified" || p === "date_modified") {
+								tmp["modified"] = obj[p];
+							}
+						}
+
+						// WebKit doesn't know how to use POSIX time è.é
+						// tmp["date"] = (tmp["date"]/1000000-11644473600);
+						// tmp["modified"] = (tmp["modified"]/1000000-11644473600);
+
+						result += 'ADD_DATE="' + String(tmp["date"]).substring(0,10) + '" ';
+						result += 'LAST_MODIFIED="' + String(tmp["modified"]).substring(0,10) + '">';
+						result += tmp["value"] + "</H3>\n";
+						result += parseObject(obj["children"], "\n");
+
+					}	
+					// Links
+					else if(obj.hasOwnProperty("url") || obj.hasOwnProperty("uri")){
+						result += '<DT><A HREF="';
+						var tmp = new Object();
+
+						for(var p in obj) {
+							if(p === "uri" || p === "url") {
+								tmp["url"] = obj[p];
+							} else if(p === "name" || p === "title") {
+								tmp["value"] = obj[p];
+							} else if(p === "dateAdded" || p === "date_added") {
+								tmp["date"] = obj[p];
+							} else if(p === "lastModified" || p === "date_modified") {
+								tmp["modified"] = obj[p];
+							} else if(p === "charset") {
+								tmp["charset"] = obj[p];
+							} else if(p === "annos") {
+								tmp["description"] = obj[p][0].value;
+							} 
+						}
+
+						// WebKit doesn't know how to use POSIX time è.é
+						// tmp["date"] = (tmp["date"]/1000000-11644473600);
+						// tmp["modified"] = (tmp["modified"]/1000000-11644473600);
+
+						result += encodeURI(tmp["url"]) + '" ADD_DATE="' + String(tmp["date"]).substring(0,10) + '" LAST_MODIFIED="';
+						result += String(tmp["modified"]).substring(0,10) + '" LAST_CHARSET="' + tmp["charset"] + '" >'; 
+						result += tmp["value"]+ "</A>\n";
+						if(tmp.hasOwnProperty("description"))
+							result += "<DD>" + tmp["description"] + "\n";
+					}
+					// Others
+					else {
+						for(var p in obj) {
+							result += parseObject(obj[p], "\n");
+						}
+					}
+				} else if(obj.constructor == Array) {
+					for(var p in obj) {
+						result += parseObject(obj[p], "\n");
+					}	
+				} 
+
+				return result;
+			}
+
+
+			function jsonToHTML(input){
+				var output = "<!DOCTYPE NETSCAPE-Bookmark-file-1>\n";
+				output += '<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">\n';
+				output += "<TITLE>Bookmarks</TITLE>\n"; 
+				output += "<H1>Bookmarks</H1>\n";
+				output += "<DL><p>\n";
+
+				// We construct a valid JSON, thanks to Firefox's shitty code è.é
+				input = input.replace(",]", "]");
+				input = input.replace(",}", "}");
+				input = input.replace("[,", "[");
+				input = input.replace("{,", "{");
+
+				var data = JSON.parse(input);
+				console.log(data);
+				output += parseObject(data, "\n");
+
+				output += "</DL><p>\n";
+				output += "</DL>";
+				return output;
+			}
+
+			function parseResult(){
+				var textarea = document.getElementById("json-input");
+				var json = textarea.value;
+
+				textarea.value = jsonToHTML(json);
+
+				return false;
+			}
+		</script>
+</body>
+</html>
