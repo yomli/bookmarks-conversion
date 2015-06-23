@@ -19,4 +19,5 @@ tmp["modified"] = (tmp["modified"]/1000000-11644473600);
 ```
 
 ## License
-Licensed under the Beerware license, revision 42.
+Licensed under the terms of the MIT-Beerware license.
+See the [LICENSE](LICENSE) file for license rights and limitations.
