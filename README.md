@@ -1,3 +1,5 @@
+Project transfered to https://codeberg.org/yomli/bookmarks-conversion
+
 # Bookmarks Conversion
 
 This script converts a bookmarks file in JSON to its Netscape HTML equivalent.
